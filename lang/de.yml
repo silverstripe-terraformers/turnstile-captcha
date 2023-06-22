@@ -1,4 +1,4 @@
 de:
-  UndefinedOffset\NoCaptcha\Forms\NocaptchaField:
+  Terraformers\TurnstileCaptcha\Forms\CaptchaField:
     NOSCRIPT: "Sie müssen JavaScript aktivieren um dieses Formular zu übermitteln"
     VALIDATE_ERROR: "Spam-Schutz konnte nicht geprüft werden"

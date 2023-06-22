@@ -1,4 +1,4 @@
 en:
-    UndefinedOffset\NoCaptcha\Forms\NocaptchaField:
-        NOSCRIPT: "You must enable JavaScript to submit this form"
-        VALIDATE_ERROR: "Captcha could not be validated"
+  Terraformers\TurnstileCaptcha\Forms\CaptchaField:
+    NOSCRIPT: "You must enable JavaScript to submit this form"
+    VALIDATE_ERROR: "Captcha could not be validated"

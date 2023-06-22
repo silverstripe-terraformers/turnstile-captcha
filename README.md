@@ -1,88 +1,143 @@
-# Silverstripe CMS supported module skeleton
+Turnstile Smart CAPTCHA
+=================
 
-A useful skeleton to more easily create a [Silverstripe CMS Module](https://docs.silverstripe.org/en/developer_guides/extending/modules/) that conform to the
-[Module Standard](https://docs.silverstripe.org/en/developer_guides/extending/modules/#module-standard).
+Adds a "spam protection" field to SilverStripe userforms using Cloudflare's
+[smart CAPTCHA](https://developers.cloudflare.com/turnstile) service.
 
-This README contains descriptions of the parts of this module base you should customise to meet you own module needs.
-For example, the module name in the H1 above should be you own module name, and the description text you are reading now
-is where you should provide a good short explanation of what your module does.
-
-Where possible we have included default text that can be included as is into your module and indicated in
-other places where you need to customise it
-
-Below is a template of the sections of your `README.md` you should ideally include to met the Module Standard
-and help others make use of your modules.
-
-## Steps to prepare this module for your own use
-
-Ensure you read the
-['publishing a module'](https://docs.silverstripe.org/en/developer_guides/extending/how_tos/publish_a_module/) guide
-and update your module's `composer.json` to designate your code as a Silversripe CMS module.
-
-- Clone this repository into a folder
-- Add your name/organisation to `LICENSE.md`
-- Update this README with information about your module. Ensure sections that aren't relevant are deleted and
-placeholders are edited where relevant
-- Review the README files in the various provided directories. You should ultimately delete these README files when you have added your code
-- Update the module's `composer.json` with your requirements and package name
-- Update (or remove) `package.json` with your requirements and package name. Run `yarn install` (or remove `yarn.lock`) to
-ensure dependencies resolve correctly
-- Clear the git history by running `rm -rf .git && git init`
-- Add and push to a VCS repository
-- Either [publish](https://getcomposer.org/doc/02-libraries.md#publishing-to-packagist) the module on packagist.org, or add a [custom repository](https://getcomposer.org/doc/02-libraries.md#publishing-to-a-vcs) to your main `composer.json`
-- Require the module in your main `composer.json`
-- If you need to build your css or js and are using components, injector, scss variables, etc from `silverstripe/admin`:
-  - Ensure that `silverstripe/admin` is installed with `composer install --prefer-source` instead of the default `--prefer-dist` (you can use `composer reinstall silverstripe/admin --prefer-source` if you already installed it)
-  - If you are relying on additional dependencies from `silverstripe/admin` instead of adding them as dependencies in your `package.json` file, you need to install third party dependencies in `silverstripe/admin` by running `yarn install` in the `vendor/silverstripe/admin/` directory.
-- Start developing your module!
-
-## License
-
-See [License](LICENSE.md)
-
-This module template defaults to using the "BSD-3-Clause" license. The BSD-3 license is one of the most
-permissive open-source license and is used by most Silverstripe CMS module.
-
-To publish your module under a different license:
-
-- update the [`license.md`](LICENSE.md) file
-- update the `license' key in your [`composer.json`](composer.json).
-
-You can use [choosealicense.com](https://choosealicense.com) to help you pick a suitable license for your project.
-
-You do not need to keep this section in your README file - the `LICENSE.md` file is sufficient.
+## Requirements
+* SilverStripe 5.x
+* [SilverStripe Spam Protection
+  3.x](https://github.com/silverstripe/silverstripe-spamprotection/)
+* PHP CURL
 
 ## Installation
-
-Replace `silverstripe-module/skeleton` in the command below with the composer name of your module.
-
-```sh
-composer require silverstripe-module/skeleton
+```
+composer require silverstripe-terraformers/turnstileCaptcha
 ```
 
-**Note:** When you have completed your module, submit it to Packagist or add it as a VCS repository to your
-project's composer.json, pointing to the private repository URL.
-
-## Documentation
-
-- [Documentation readme](docs/en/README.md)
-
-Add links into your `docs/<language>` folder here unless your module only requires minimal documentation
-in that case, add here and remove the docs folder. You might use this as a quick table of content if you
-mhave multiple documentation pages.
-
-## Example configuration
-
-If your module makes use of the config API in Silverstripe CMS it's a good idea to provide an example config
-here that will get the module working out of the box and expose the user to the possible configuration options.
-Though note that in many cases simply linking to the documentation is enough.
-
-Provide a syntax-highlighted code examples where possible.
-
-```yaml
-Page:
-  config_option: true
-  another_config:
-    - item1
-    - item2
+After installing the module via composer or manual install you must set the spam
+protector to NocaptchaProtector, this needs to be set in your site's config file
+normally this is mysite/\_config/config.yml.
+```yml
+SilverStripe\SpamProtection\Extension\FormSpamProtectionExtension:
+    default_spam_protector: Terraformers\TurnstileCaptcha\Forms\TurnstileCaptchaProtector
 ```
+
+Finally, add the "spam protection" field to your form by calling
+``enableSpamProtection()`` on the form object.
+```php
+$form->enableSpamProtection();
+```
+
+## Configuration
+There are multiple configuration options for the field, you must set the
+site_key and the secret_key which you can get from the [reCAPTCHA
+page](https://www.google.com/recaptcha). These configuration options must be
+added to your site's yaml config typically this is mysite/\_config/config.yml.
+```yml
+Terraformers\TurnstileCaptcha\Forms\TurnstileCaptchaField:
+    site_key: "YOUR_SITE_KEY" #Your site key (required)
+    secret_key: "YOUR_SECRET_KEY" #Your secret key (required)
+    verify_ssl: true #Allows you to disable php-curl's SSL peer verification by setting this to false (optional, defaults to true)
+    default_theme: "light" #Default theme color (optional, light or dark, defaults to light)
+    default_handle_submit: true #Default setting for whether nocaptcha should handle form submission. See "Handling form submission" below.
+    proxy_server: "" #Your proxy server address (optional)
+    proxy_port: "" #Your proxy server address port (optional)
+    proxy_auth: "" #Your proxy server authentication information (optional)
+```
+
+## Adding field labels
+
+If you want to add a field label or help text to the Captcha field you can do so
+like this:
+
+```php
+$form->enableSpamProtection()
+    ->fields()->fieldByName('Captcha')
+    ->setTitle("Spam protection")
+    ->setDescription("Please tick the box to prove you're a human and help us stop spam.");
+```
+
+### Commenting Module
+When your using the
+[silverstripe/comments](https://github.com/silverstripe/silverstripe-comments)
+module you must add the following (per their documentation) to your \_config.php
+in order to use Terraformers\TurnstileCaptcha on comment forms.
+
+```php
+CommentingController::add_extension('CommentSpamProtection');
+```
+
+## Retrieving the Verify Response
+
+If you wish to manually retrieve the Site Verify response in you form action use
+the `getVerifyResponse()` method
+
+```php
+function doSubmit($data, $form) {
+    $captchaResponse = $form->Fields()->fieldByName('Captcha')->getVerifyResponse();
+
+    // $captchaResponse = array (size=5) [
+    //  'success' => boolean true
+    //  'challenge_ts' => string '2020-09-08T20:48:34Z' (length=20)
+    //  'hostname' => string 'localhost' (length=9)
+    //  'score' => float 0.9
+    //  'action' => string 'submit' (length=6)
+    // ];
+}
+```
+
+## Handling form submission
+By default, the javascript included with this module will add a submit event handler to your form.
+
+If you need to handle form submissions in a special way (for example to support front-end validation),
+you can choose to handle form submit events yourself.
+
+This can be configured site-wide using the Config API
+```yml
+Terraformers\TurnstileCaptcha\Forms\TurnstileCaptchaField:
+    default_handle_submit: false
+```
+
+Or on a per form basis:
+```php
+$captchaField = $form->Fields()->fieldByName('Captcha');
+$captchaField->setHandleSubmitEvents(false);
+```
+
+With this configuration no event handlers will be added by this module to your form. Instead, a
+function will be provided called `nocaptcha_handleCaptcha` which you can call from your code
+when you're ready to submit your form. It has the following signature:
+```js
+function nocaptcha_handleCaptcha(form, callback)
+```
+`form` must be the form element, and `callback` should be a function that finally submits the form,
+though it is optional.
+
+In the simplest case, you can use it like this:
+```js
+document.addEventListener("DOMContentLoaded", function(event) {
+    // where formID is the element ID for your form
+    const form = document.getElementById(formID);
+    const submitListener = function(event) {
+        event.preventDefault();
+        let valid = true;
+        /* Your validation logic here */
+        if (valid) {
+            nocaptcha_handleCaptcha(form, form.submit.bind(form));
+        }
+    };
+    form.addEventListener('submit', submitListener);
+});
+```
+
+## Reporting an issue
+
+When you're reporting an issue please ensure you specify what version of
+SilverStripe you are using i.e. 3.1.3, 3.2beta, master etc. Also be sure to
+include any JavaScript or PHP errors you receive, for PHP errors please ensure
+you include the full stack trace. Also please include how you produced the
+issue. You may also be asked to provide some of the classes to aid in
+re-producing the issue. Stick with the issue, remember that you seen the issue
+not the maintainer of the module so it may take allot of questions to arrive at
+a fix or answer.

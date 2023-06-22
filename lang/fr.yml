@@ -1,4 +1,4 @@
 fr:
-    UndefinedOffset\NoCaptcha\Forms\NocaptchaField:
-        NOSCRIPT: "Vous devez activer JavaScript pour soumettre ce formulaire"
-        VALIDATE_ERROR: "Captcha n'a pas pu être validé"
+  Terraformers\TurnstileCaptcha\Forms\CaptchaField:
+    NOSCRIPT: "Vous devez activer JavaScript pour soumettre ce formulaire"
+    VALIDATE_ERROR: "Captcha n'a pas pu être validé"
