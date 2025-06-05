@@ -47,7 +47,7 @@ class TurnstileCaptchaField extends FormField
      */
     protected array $verifyResponse = ['success' => false];
 
-    private bool $renderType;
+    private string $renderType;
 
     private static array $dependencies = [
         'httpClient' => '%$' . HttpClient::class
@@ -88,7 +88,6 @@ class TurnstileCaptchaField extends FormField
         if (empty($siteKey) || empty($secretKey)) {
             user_error('You must configure site_key and secret_key, you can retrieve these at https://developers.cloudflare.com/turnstile/', E_USER_ERROR);
         }
-
 
         Requirements::javascript(
             'https://challenges.cloudflare.com/turnstile/v0/api.js?language='
@@ -181,23 +180,23 @@ class TurnstileCaptchaField extends FormField
     }
 
     /**
-     * Sets render type of the turnstyle widget
+     * Sets render type of the turnstile widget
      *
-     * @param boolean $value
+     * @param string $value
      * @return TurnstileCaptchaField
      */
-    public function setRenderType(bool $value): TurnstileCaptchaField
+    public function setRenderType(string $value): TurnstileCaptchaField
     {
         $this->renderType = $value;
         return $this;
     }
 
     /**
-     * Get the render type of the turnstyle widget
+     * Get the render type of the turnstile widget
      *
-     * @return boolean
+     * @return string
      */
-    public function getRenderType(): bool
+    public function getRenderType(): string
     {
         return $this->renderType;
     }
