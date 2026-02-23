@@ -13,7 +13,7 @@ use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Dev\SapphireTest;
 use SilverStripe\Forms\FieldList;
 use SilverStripe\Forms\Form;
-use SilverStripe\Forms\RequiredFields;
+use SilverStripe\Forms\Validation\RequiredFieldsValidator;
 use SilverStripe\Forms\Validator;
 use Terraformers\TurnstileCaptcha\Forms\TurnstileCaptchaField;
 use Terraformers\TurnstileCaptcha\Http\HttpClient;
@@ -98,25 +98,22 @@ class TurnstileCaptchaFieldTest extends SapphireTest
         Controller::curr()->setRequest($request);
         
         $turnstileCaptchField = TurnstileCaptchaField::create('turnstileField');
-        $validator = RequiredFields::create();
-        $validation = $turnstileCaptchField->validate($validator);
+        $result = $turnstileCaptchField->validate();
         // first request should pass validation
-        $this->assertTrue($validation);
-        $this->assertEmpty($validator->getErrors());
+        $this->assertTrue($result->isValid());
+        $this->assertEmpty($result->getMessages());
         
         // second should fail
-        $validator = RequiredFields::create();
-        $validation = $turnstileCaptchField->validate($validator);
-        $this->assertFalse($validation);
-        $errors = $validator->getErrors();
+        $result = $turnstileCaptchField->validate();
+        $this->assertFalse($result->isValid());
+        $errors = $result->getMessages();
 
         $this->assertEquals('Captcha could not be validated', $errors[0]['message']);
         
         // third should fail gracefully (error)
-        $validator = RequiredFields::create();
-        $validation = $turnstileCaptchField->validate($validator);
-        $this->assertFalse($validation);
-        $errors = $validator->getErrors();
+        $validation = $turnstileCaptchField->validate();
+        $this->assertFalse($result->isValid());
+        $errors = $result->getMessages();
 
         $this->assertEquals('Captcha could not be validated', $errors[0]['message']);
     }

@@ -9,8 +9,8 @@ use Psr\Log\LoggerInterface;
 use SilverStripe\Control\Controller;
 use SilverStripe\Core\Environment;
 use SilverStripe\Core\Injector\Injector;
+use SilverStripe\Core\Validation\ValidationResult;
 use SilverStripe\Forms\FormField;
-use SilverStripe\Forms\Validator;
 use SilverStripe\i18n\i18n;
 use SilverStripe\View\Requirements;
 use Terraformers\TurnstileCaptcha\Http\ClientInterface;
@@ -105,79 +105,75 @@ class TurnstileCaptchaField extends FormField
     /**
      * Validates the captcha against the TurnstileCaptcha API
      *
-     * @param Validator $validator Validator to send errors to
-     * @return bool Returns boolean
      * @throws NotFoundExceptionInterface
+     * @return ValidationResult
      */
-    public function validate($validator): bool
+    public function validate(): ValidationResult
     {
+        $this->beforeExtending('updateValidate', function (ValidationResult $result) {
+            $request = Controller::curr()->getRequest();
+            $captchaResponse = $request->requestVar('cf-turnstile-response');
 
-        $request = Controller::curr()->getRequest();
-        $captchaResponse = $request->requestVar('cf-turnstile-response');
-
-        if (!isset($captchaResponse)) {
-            $validator->validationError(
-                $this->name,
-                _t(
-                    'Terraformers\\TurnstileCaptcha\\Forms\\TurnstileCaptchaField.NOSCRIPT',
-                    'if you do not see the captcha you must enable JavaScript'
-                ),
-                'validation'
-            );
-            return false;
-        }
-
-
-        $client = $this->httpClient->getClient();
-
-        try {
-            $response = $client->request(
-                'POST',
-                'https://challenges.cloudflare.com/turnstile/v0/siteverify',
-                [
-                    'json' => [
-                        'secret' => $this->getSecretKey(),
-                        'response' => $captchaResponse,
-                        'remoteip' => $request->getIP(),
-                    ]
-                ]
-            );
-
-            $responseBody = json_decode($response->getBody(), true);
-            if (is_array($responseBody)) {
-                $this->verifyResponse = $responseBody;
+            if (!isset($captchaResponse)) {
+               $result->addFieldError(
+                    $this->name,
+                    _t(
+                        'Terraformers\\TurnstileCaptcha\\Forms\\TurnstileCaptchaField.NOSCRIPT',
+                        'if you do not see the captcha you must enable JavaScript'
+                    )
+                );
             }
-        } catch (GuzzleException $e) {
-            $logger = Injector::inst()->get(LoggerInterface::class);
-            $logger->error($e->getMessage());
-            $validator->validationError(
-                $this->name,
-                _t(
-                    'Terraformers\\TurnstileCaptcha\\Forms\\TurnstileCaptchaField.VALIDATE_ERROR',
-                    'Turnstile Captcha Field could not be validated'
-                ),
-                'validation'
-            );
-            return false;
-        }
 
-        if ($response->getStatusCode() !== 200 || !$this->verifyResponse['success']) {
-            $validator->validationError(
-                $this->name,
-                _t(
-                    'Terraformers\\TurnstileCaptcha\\Forms\\TurnstileCaptchaField.VALIDATE_ERROR',
-                    'Turnstile Captcha Field could not be validated'
-                ),
-                'validation'
-            );
-            $logger = Injector::inst()->get(LoggerInterface::class);
-            $logger->error(
-                'Turnstile Captcha Field validation failed as request was not successful.'
-            );
-            return false;
-        }
+            $client = $this->httpClient->getClient();
+            try {
+                $response = $client->request(
+                    'POST',
+                    'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+                    [
+                        'json' => [
+                            'secret' => $this->getSecretKey(),
+                            'response' => $captchaResponse,
+                            'remoteip' => $request->getIP(),
+                        ]
+                    ]
+                );
 
-        return true;
+                $responseBody = json_decode($response->getBody(), true);
+                if (is_array($responseBody)) {
+                    $this->verifyResponse = $responseBody;
+                }
+
+            } catch (GuzzleException $e) {
+                $logger = Injector::inst()->get(LoggerInterface::class);
+                $logger->error($e->getMessage());
+                $result->addFieldError(
+                    $this->name,
+                    _t(
+                        'Terraformers\\TurnstileCaptcha\\Forms\\TurnstileCaptchaField.VALIDATE_ERROR',
+                        'Turnstile Captcha Field could not be validated'
+                    )
+                );
+            }
+
+            if (
+                isset($response) && $response->getStatusCode() !== 200 ||
+                !$this->verifyResponse['success']
+            ) {
+                $result->addFieldError(
+                    $this->name,
+                    _t(
+                        'Terraformers\\TurnstileCaptcha\\Forms\\TurnstileCaptchaField.VALIDATE_ERROR',
+                        'Turnstile Captcha Field could not be validated'
+                    )
+                );
+                $logger = Injector::inst()->get(LoggerInterface::class);
+                $logger->error(
+                    'Turnstile Captcha Field validation failed as request was not successful.'
+                );
+            }
+        });
+
+        return parent::validate();
     }
 
     /**
