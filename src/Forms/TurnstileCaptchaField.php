@@ -86,7 +86,11 @@ class TurnstileCaptchaField extends FormField
         $secretKey = $this->getSecretKey();
 
         if (empty($siteKey) || empty($secretKey)) {
-            user_error('You must configure site_key and secret_key, you can retrieve these at https://developers.cloudflare.com/turnstile/', E_USER_ERROR);
+            user_error(
+                'You must configure site_key and secret_key, you can retrieve these at '
+                    . 'https://developers.cloudflare.com/turnstile/',
+                E_USER_ERROR
+            );
         }
 
         Requirements::javascript(
@@ -144,7 +148,6 @@ class TurnstileCaptchaField extends FormField
                 if (is_array($responseBody)) {
                     $this->verifyResponse = $responseBody;
                 }
-
             } catch (GuzzleException $e) {
                 $logger = Injector::inst()->get(LoggerInterface::class);
                 $logger->error($e->getMessage());
