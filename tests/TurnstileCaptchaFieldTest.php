@@ -13,19 +13,16 @@ use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Dev\SapphireTest;
 use SilverStripe\Forms\FieldList;
 use SilverStripe\Forms\Form;
-use SilverStripe\Forms\Validation\RequiredFieldsValidator;
-use SilverStripe\Forms\Validator;
 use Terraformers\TurnstileCaptcha\Forms\TurnstileCaptchaField;
 use Terraformers\TurnstileCaptcha\Http\HttpClient;
 
 class TurnstileCaptchaFieldTest extends SapphireTest
 {
-
     protected $usesDatabase = false;
 
     public static function setUpBeforeClass(): void
-    {  
-        // workaround to disable test database connection 
+    {
+        // workaround to disable test database connection
         // @see https://github.com/silverstripe/silverstripe-framework/issues/10849
         parent::setUpBeforeClass();
         $states = static::$state->getStates();
@@ -33,7 +30,6 @@ class TurnstileCaptchaFieldTest extends SapphireTest
         static::$state->setStates($states);
 
         static::$tempDB = null;
-
     }
 
     /**
@@ -64,7 +60,7 @@ class TurnstileCaptchaFieldTest extends SapphireTest
         {
             public function __construct(?Client $client = null)
             {
-        
+
                 // Create a Mock Handler with success & fail response data
                 $mock = new MockHandler([
                     // first request passes
@@ -86,36 +82,34 @@ class TurnstileCaptchaFieldTest extends SapphireTest
                 ]);
                 $handleStack = HandlerStack::create($mock);
                 $client = new Client(['handler' => $handleStack]);
-                
+
                 $this->client = $client;
             }
-        
         };
 
         Injector::inst()->registerService($testClient, HttpClient::class);
 
-        $request = new HTTPRequest('POST', '/', [], ['cf-turnstile-response'=> 'abcd']);
+        $request = new HTTPRequest('POST', '/', [], ['cf-turnstile-response' => 'abcd']);
         Controller::curr()->setRequest($request);
-        
+
         $turnstileCaptchField = TurnstileCaptchaField::create('turnstileField');
         $result = $turnstileCaptchField->validate();
         // first request should pass validation
         $this->assertTrue($result->isValid());
         $this->assertEmpty($result->getMessages());
-        
+
         // second should fail
         $result = $turnstileCaptchField->validate();
         $this->assertFalse($result->isValid());
         $errors = $result->getMessages();
 
         $this->assertEquals('Captcha could not be validated', $errors[0]['message']);
-        
+
         // third should fail gracefully (error)
-        $validation = $turnstileCaptchField->validate();
+        $result = $turnstileCaptchField->validate();
         $this->assertFalse($result->isValid());
         $errors = $result->getMessages();
 
         $this->assertEquals('Captcha could not be validated', $errors[0]['message']);
     }
-
 }

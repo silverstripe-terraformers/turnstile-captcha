@@ -86,7 +86,11 @@ class TurnstileCaptchaField extends FormField
         $secretKey = $this->getSecretKey();
 
         if (empty($siteKey) || empty($secretKey)) {
-            user_error('You must configure site_key and secret_key, you can retrieve these at https://developers.cloudflare.com/turnstile/', E_USER_ERROR);
+            user_error(
+                'You must configure site_key and secret_key, you can retrieve these at '
+                    . 'https://developers.cloudflare.com/turnstile/',
+                E_USER_ERROR
+            );
         }
 
         Requirements::javascript(
@@ -114,16 +118,19 @@ class TurnstileCaptchaField extends FormField
             $captchaResponse = $request->requestVar('cf-turnstile-response');
 
             if (!isset($captchaResponse)) {
-               $result->addFieldError(
+                $result->addFieldError(
                     $this->name,
                     _t(
                         'Terraformers\\TurnstileCaptcha\\Forms\\TurnstileCaptchaField.NOSCRIPT',
                         'if you do not see the captcha you must enable JavaScript'
                     )
                 );
+
+                return;
             }
 
             $client = $this->httpClient->getClient();
+
             try {
                 $response = $client->request(
                     'POST',
@@ -141,7 +148,6 @@ class TurnstileCaptchaField extends FormField
                 if (is_array($responseBody)) {
                     $this->verifyResponse = $responseBody;
                 }
-
             } catch (GuzzleException $e) {
                 $logger = Injector::inst()->get(LoggerInterface::class);
                 $logger->error($e->getMessage());
@@ -152,12 +158,11 @@ class TurnstileCaptchaField extends FormField
                         'Turnstile Captcha Field could not be validated'
                     )
                 );
+
+                return;
             }
 
-            if (
-                isset($response) && $response->getStatusCode() !== 200 ||
-                !$this->verifyResponse['success']
-            ) {
+            if ($response->getStatusCode() !== 200 || !$this->verifyResponse['success']) {
                 $result->addFieldError(
                     $this->name,
                     _t(
