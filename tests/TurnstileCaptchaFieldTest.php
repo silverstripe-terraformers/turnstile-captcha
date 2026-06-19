@@ -13,8 +13,6 @@ use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Dev\SapphireTest;
 use SilverStripe\Forms\FieldList;
 use SilverStripe\Forms\Form;
-use SilverStripe\Forms\Validation\RequiredFieldsValidator;
-use SilverStripe\Forms\Validator;
 use Terraformers\TurnstileCaptcha\Forms\TurnstileCaptchaField;
 use Terraformers\TurnstileCaptcha\Http\HttpClient;
 
@@ -111,7 +109,7 @@ class TurnstileCaptchaFieldTest extends SapphireTest
         $this->assertEquals('Captcha could not be validated', $errors[0]['message']);
         
         // third should fail gracefully (error)
-        $validation = $turnstileCaptchField->validate();
+        $result = $turnstileCaptchField->validate();
         $this->assertFalse($result->isValid());
         $errors = $result->getMessages();
 

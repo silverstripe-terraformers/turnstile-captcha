@@ -114,16 +114,19 @@ class TurnstileCaptchaField extends FormField
             $captchaResponse = $request->requestVar('cf-turnstile-response');
 
             if (!isset($captchaResponse)) {
-               $result->addFieldError(
+                $result->addFieldError(
                     $this->name,
                     _t(
                         'Terraformers\\TurnstileCaptcha\\Forms\\TurnstileCaptchaField.NOSCRIPT',
                         'if you do not see the captcha you must enable JavaScript'
                     )
                 );
+
+                return;
             }
 
             $client = $this->httpClient->getClient();
+
             try {
                 $response = $client->request(
                     'POST',
@@ -152,12 +155,11 @@ class TurnstileCaptchaField extends FormField
                         'Turnstile Captcha Field could not be validated'
                     )
                 );
+
+                return;
             }
 
-            if (
-                isset($response) && $response->getStatusCode() !== 200 ||
-                !$this->verifyResponse['success']
-            ) {
+            if ($response->getStatusCode() !== 200 || !$this->verifyResponse['success']) {
                 $result->addFieldError(
                     $this->name,
                     _t(
